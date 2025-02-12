@@ -24,4 +24,177 @@
             box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
         }
 
-        .controls, .score,
+        .controls, .score, .message, .frustration-container {
+            display: none;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background: #ffcc00;
+            color: #000;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        button:hover {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-top: 10px;
+        }
+
+        .frustration-container {
+            width: 300px;
+            height: 20px;
+            background: #555;
+            border: 2px solid #000;
+            margin: 10px auto;
+            position: relative;
+        }
+
+        .frustration-bar {
+            width: 0%;
+            height: 100%;
+            background: green;
+            transition: width 0.3s, background 0.3s;
+        }
+
+        .frustration-label {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-title">Back Seat Driver</div>
+        <div class="welcome-tagline">Ugh, such an annoying game.</div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="score" id="score">Score: 0</div>
+    <div class="frustration-container" id="frustrationContainer">
+        <div class="frustration-bar" id="frustrationBar"></div>
+    </div>
+    <div class="frustration-label" id="frustrationLabel">Frustration Level: 0%</div>
+    
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="message" id="message"></div>
+    <div class="controls">
+        <button id="leftBtn" onclick="giveCommand('left')">Turn Left</button>
+        <button id="rightBtn" onclick="giveCommand('right')">Turn Right</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const messageBox = document.getElementById("message");
+        const scoreBox = document.getElementById("score");
+        const leftBtn = document.getElementById("leftBtn");
+        const rightBtn = document.getElementById("rightBtn");
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const controls = document.querySelector(".controls");
+        const frustrationBar = document.getElementById("frustrationBar");
+        const frustrationContainer = document.getElementById("frustrationContainer");
+        const frustrationLabel = document.getElementById("frustrationLabel");
+
+        let driver, obstacles, gameRunning, score, buttonCooldown, frustrationLevel, lastCommandTime;
+
+        function startGame() {
+            welcomeScreen.style.display = "none";
+            canvas.style.display = "block";
+            scoreBox.style.display = "block";
+            messageBox.style.display = "block";
+            controls.style.display = "block";
+            frustrationContainer.style.display = "block";
+            frustrationLabel.style.display = "block";
+            resetGame();
+        }
+
+        function resetGame() {
+            driver = { x: 180, y: 500, width: 40, height: 60 };
+            obstacles = [];
+            gameRunning = true;
+            score = 0;
+            buttonCooldown = false;
+            frustrationLevel = 0;
+            lastCommandTime = Date.now();
+            leftBtn.disabled = false;
+            rightBtn.disabled = false;
+            messageBox.innerText = "";
+            scoreBox.innerText = "Score: 0";
+            updateFrustration();
+            update();
+        }
+
+        function giveCommand(direction) {
+            if (buttonCooldown || !gameRunning) return;
+
+            const now = Date.now();
+            const timeSinceLastCommand = (now - lastCommandTime) / 1000;
+
+            if (timeSinceLastCommand > 5) {
+                frustrationLevel = Math.max(0, frustrationLevel - 10);
+            } else {
+                frustrationLevel += 5;
+            }
+
+            updateFrustration();
+
+            lastCommandTime = now;
+            buttonCooldown = true;
+            leftBtn.disabled = true;
+            rightBtn.disabled = true;
+
+            setTimeout(() => {
+                if (Math.random() > 0.3 + (frustrationLevel / 100)) {
+                    if (direction === "left" && driver.x > 100) driver.x -= 40;
+                    if (direction === "right" && driver.x < 260) driver.x += 40;
+                    messageBox.innerText = "";
+                } else {
+                    messageBox.innerText = "Driver ignored you!";
+                    setTimeout(() => { messageBox.innerText = ""; }, 1000);
+                }
+
+                buttonCooldown = false;
+                leftBtn.disabled = false;
+                rightBtn.disabled = false;
+            }, frustrationLevel * 10);
+        }
+
+        function updateFrustration() {
+            frustrationBar.style.width = frustrationLevel + "%";
+            frustrationBar.style.background = `rgb(${frustrationLevel * 2.5}, ${255 - frustrationLevel * 2.5}, 0)`;
+            frustrationLabel.innerText = "Frustration Level: " + frustrationLevel + "%";
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoad();
+            drawObstacles();
+            drawDriver();
+            moveObstacles();
+            checkCollision();
+            score++;
+            scoreBox.innerText = "Score: " + score;
+            requestAnimationFrame(update);
+        }
+
+        setInterval(spawnObstacle, 2000);
+    </script>
+</body>
+</html>
