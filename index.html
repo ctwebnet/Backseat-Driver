@@ -5,13 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Back Seat Driver</title>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; background: #f4f4f4; }
-        canvas { background: #aaa; margin-top: 20px; display: none; margin-left: auto; margin-right: auto; border: 2px solid black; }
-        .controls, .score, .message { display: none; }
-        button { font-size: 18px; padding: 10px 20px; margin: 5px; }
-        .welcome-screen { display: block; margin-top: 50px; }
-        .welcome-title { font-size: 32px; font-weight: bold; }
-        .welcome-tagline { font-size: 18px; color: gray; margin-bottom: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            text-align: center;
+            font-family: 'Press Start 2P', cursive;
+            background: #ff00ff; /* 90s hot pink */
+            color: #fff;
+        }
+
+        canvas {
+            background: linear-gradient(45deg, #00ffcc, #ffcc00); /* Neon gradient */
+            margin-top: 20px;
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+            border: 5px solid #000;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        }
+
+        .controls, .score, .message {
+            display: none;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background: #ffcc00;
+            color: #000;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        button:hover {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .welcome-screen {
+            display: block;
+            margin-top: 50px;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .welcome-tagline {
+            font-size: 16px;
+            color: #ffff00;
+            margin-bottom: 20px;
+        }
+
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-top: 10px;
+        }
+
+        .message {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0000;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -25,8 +90,8 @@
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
-        <button id="leftBtn" onclick="giveCommand('left')">TURN LEFT!</button>
-        <button id="rightBtn" onclick="giveCommand('right')">TURN RIGHT!</button>
+        <button id="leftBtn" onclick="giveCommand('left')">TURN LEFT!!!</button>
+        <button id="rightBtn" onclick="giveCommand('right')">TURN RIGHT!!!</button>
     </div>
 
     <script>
@@ -64,18 +129,18 @@
         }
 
         function drawRoad() {
-            ctx.fillStyle = "#444";
+            ctx.fillStyle = "#222";
             ctx.fillRect(50, 0, 300, canvas.height);
-            ctx.fillStyle = "#fff";
+            ctx.fillStyle = "#00ff00"; /* Bright neon green lane markings */
             for (let i = 0; i < 6; i++) {
                 ctx.fillRect(195, i * 100, 10, 40);
             }
         }
 
         function drawDriver() {
-            ctx.fillStyle = "blue";
+            ctx.fillStyle = "#ff0000"; /* Bright red car */
             ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
-            ctx.strokeStyle = "black";
+            ctx.strokeStyle = "#000";
             ctx.lineWidth = 2;
             ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
         }
@@ -94,7 +159,7 @@
         }
 
         function drawObstacles() {
-            ctx.fillStyle = "red";
+            ctx.fillStyle = "#ffcc00"; /* Bright yellow obstacles */
             obstacles.forEach(obstacle => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
