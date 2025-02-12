@@ -33,7 +33,10 @@
         let laneRight = 260;
         let roadSpeed = 5;
         let laneMarkings = Array.from({ length: 6 }, (_, i) => ({ x: 195, y: i * 100 }));
-        let buttonCooldown = false; // Prevents spam clicking
+        let buttonCooldown = false;
+        let obstacles = [];
+        let obstacleSpeed = 3;
+        let gameRunning = true;
 
         function drawRoad() {
             ctx.fillStyle = "#444";
@@ -61,8 +64,42 @@
             ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
         }
 
+        function spawnObstacle() {
+            let lanes = [laneLeft, laneRight, 180];
+            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
+            obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
+        }
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += obstacleSpeed;
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height); // Remove off-screen obstacles
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "red";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (driver.x < obstacle.x + obstacle.width &&
+                    driver.x + driver.width > obstacle.x &&
+                    driver.y < obstacle.y + obstacle.height &&
+                    driver.y + driver.height > obstacle.y) {
+                    gameRunning = false;
+                    messageBox.innerText = "Crash! Game Over.";
+                    leftBtn.disabled = true;
+                    rightBtn.disabled = true;
+                }
+            });
+        }
+
         function giveCommand(direction) {
-            if (buttonCooldown) return; // Prevent multiple presses before delay finishes
+            if (buttonCooldown || !gameRunning) return;
 
             buttonCooldown = true;
             leftBtn.disabled = true;
@@ -81,19 +118,26 @@
                 buttonCooldown = false;
                 leftBtn.disabled = false;
                 rightBtn.disabled = false;
-            }, 1000); // 1-second delay before the action happens
+            }, 1000);
         }
 
         function update() {
+            if (!gameRunning) return;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             moveRoad();
+            moveObstacles();
             drawRoad();
+            drawObstacles();
             drawDriver();
+            checkCollision();
+
             requestAnimationFrame(update);
         }
 
-        update(); // Start the game loop immediately
+        setInterval(spawnObstacle, 2000); // Spawn a new obstacle every 2 seconds
 
+        update();
     </script>
 </body>
 </html>
