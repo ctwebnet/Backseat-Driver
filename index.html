@@ -15,7 +15,7 @@
         }
 
         canvas {
-            background: #222; /* Dark gray to ensure visibility */
+            background: #222; /* Dark gray to ensure visibility of objects */
             margin-top: 20px;
             display: none;
             margin-left: auto;
@@ -24,7 +24,7 @@
             box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
         }
 
-        .controls, .score, .message, .frustration-container {
+        .controls, .score, .message {
             display: none;
         }
 
@@ -47,6 +47,23 @@
             box-shadow: none;
         }
 
+        .welcome-screen {
+            display: block;
+            margin-top: 50px;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .welcome-tagline {
+            font-size: 16px;
+            color: #ffff00;
+            margin-bottom: 20px;
+        }
+
         .score {
             font-size: 20px;
             font-weight: bold;
@@ -54,27 +71,11 @@
             margin-top: 10px;
         }
 
-        .frustration-container {
-            width: 300px;
-            height: 20px;
-            background: #555;
-            border: 2px solid #000;
-            margin: 10px auto;
-            position: relative;
-        }
-
-        .frustration-bar {
-            width: 0%;
-            height: 100%;
-            background: green;
-            transition: width 0.3s, background 0.3s;
-        }
-
-        .frustration-label {
-            font-size: 16px;
+        .message {
+            font-size: 18px;
             font-weight: bold;
-            margin-top: 5px;
-            color: #fff;
+            color: #ff0000;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -86,11 +87,6 @@
     </div>
 
     <div class="score" id="score">Score: 0</div>
-    <div class="frustration-container" id="frustrationContainer">
-        <div class="frustration-bar" id="frustrationBar"></div>
-    </div>
-    <div class="frustration-label" id="frustrationLabel">Frustration Level: 0%</div>
-    
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
@@ -107,11 +103,8 @@
         const rightBtn = document.getElementById("rightBtn");
         const welcomeScreen = document.getElementById("welcomeScreen");
         const controls = document.querySelector(".controls");
-        const frustrationBar = document.getElementById("frustrationBar");
-        const frustrationContainer = document.getElementById("frustrationContainer");
-        const frustrationLabel = document.getElementById("frustrationLabel");
 
-        let driver, obstacles, gameRunning, score, buttonCooldown, frustrationLevel, lastCommandTime;
+        let driver, obstacles, gameRunning, score, buttonCooldown;
 
         function startGame() {
             welcomeScreen.style.display = "none";
@@ -119,8 +112,6 @@
             scoreBox.style.display = "block";
             messageBox.style.display = "block";
             controls.style.display = "block";
-            frustrationContainer.style.display = "block";
-            frustrationLabel.style.display = "block";
             resetGame();
         }
 
@@ -130,37 +121,74 @@
             gameRunning = true;
             score = 0;
             buttonCooldown = false;
-            frustrationLevel = 0;
-            lastCommandTime = Date.now();
             leftBtn.disabled = false;
             rightBtn.disabled = false;
             messageBox.innerText = "";
             scoreBox.innerText = "Score: 0";
-            updateFrustration();
             update();
+        }
+
+        function drawDriver() {
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
+        }
+
+        function drawRoad() {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(50, 0, 300, canvas.height);
+            ctx.fillStyle = "#00ff00";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
+            }
+        }
+
+        function spawnObstacle() {
+            let lanes = [100, 180, 260];
+            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
+            let newObstacle = { x: obstacleX, y: -40, width: 40, height: 40 };
+            obstacles.push(newObstacle);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "#00ff00";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += 3;
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (driver.x < obstacle.x + obstacle.width &&
+                    driver.x + driver.width > obstacle.x &&
+                    driver.y < obstacle.y + obstacle.height &&
+                    driver.y + driver.height > obstacle.y) {
+                    gameRunning = false;
+                    messageBox.innerText = "Crash! Tap to Restart.";
+                    leftBtn.disabled = true;
+                    rightBtn.disabled = true;
+                }
+            });
         }
 
         function giveCommand(direction) {
             if (buttonCooldown || !gameRunning) return;
 
-            const now = Date.now();
-            const timeSinceLastCommand = (now - lastCommandTime) / 1000;
-
-            if (timeSinceLastCommand > 5) {
-                frustrationLevel = Math.max(0, frustrationLevel - 10);
-            } else {
-                frustrationLevel += 5;
-            }
-
-            updateFrustration();
-
-            lastCommandTime = now;
             buttonCooldown = true;
             leftBtn.disabled = true;
             rightBtn.disabled = true;
 
             setTimeout(() => {
-                if (Math.random() > 0.3 + (frustrationLevel / 100)) {
+                if (Math.random() > 0.3) {
                     if (direction === "left" && driver.x > 100) driver.x -= 40;
                     if (direction === "right" && driver.x < 260) driver.x += 40;
                     messageBox.innerText = "";
@@ -172,13 +200,7 @@
                 buttonCooldown = false;
                 leftBtn.disabled = false;
                 rightBtn.disabled = false;
-            }, frustrationLevel * 10);
-        }
-
-        function updateFrustration() {
-            frustrationBar.style.width = frustrationLevel + "%";
-            frustrationBar.style.background = `rgb(${frustrationLevel * 2.5}, ${255 - frustrationLevel * 2.5}, 0)`;
-            frustrationLabel.innerText = "Frustration Level: " + frustrationLevel + "%";
+            }, 1000);
         }
 
         function update() {
@@ -189,8 +211,6 @@
             drawDriver();
             moveObstacles();
             checkCollision();
-            score++;
-            scoreBox.innerText = "Score: " + score;
             requestAnimationFrame(update);
         }
 
