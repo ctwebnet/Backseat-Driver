@@ -10,10 +10,12 @@
         .controls { margin-top: 10px; }
         button { font-size: 18px; padding: 10px 20px; margin: 5px; }
         .message { font-size: 20px; font-weight: bold; color: red; margin-top: 10px; height: 30px; }
+        .score { font-size: 24px; font-weight: bold; color: black; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1>Backseat Driver</h1>
+    <div class="score" id="score">Score: 0</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
@@ -25,35 +27,32 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const messageBox = document.getElementById("message");
+        const scoreBox = document.getElementById("score");
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
 
-        let driver = { x: 180, y: 500, width: 40, height: 60 };
-        let laneLeft = 100;
-        let laneRight = 260;
-        let roadSpeed = 5;
-        let laneMarkings = Array.from({ length: 6 }, (_, i) => ({ x: 195, y: i * 100 }));
-        let buttonCooldown = false;
-        let obstacles = [];
-        let obstacleSpeed = 3;
-        let gameRunning = true;
+        let driver, obstacles, gameRunning, score, buttonCooldown;
+
+        function resetGame() {
+            driver = { x: 180, y: 500, width: 40, height: 60 };
+            obstacles = [];
+            gameRunning = true;
+            score = 0;
+            buttonCooldown = false;
+            leftBtn.disabled = false;
+            rightBtn.disabled = false;
+            messageBox.innerText = "";
+            scoreBox.innerText = "Score: 0";
+            update();
+        }
 
         function drawRoad() {
             ctx.fillStyle = "#444";
             ctx.fillRect(50, 0, 300, canvas.height);
             ctx.fillStyle = "#fff";
-            laneMarkings.forEach(mark => {
-                ctx.fillRect(mark.x, mark.y, 10, 40);
-            });
-        }
-
-        function moveRoad() {
-            laneMarkings.forEach(mark => {
-                mark.y += roadSpeed;
-                if (mark.y > canvas.height) {
-                    mark.y = -40;
-                }
-            });
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
+            }
         }
 
         function drawDriver() {
@@ -65,16 +64,16 @@
         }
 
         function spawnObstacle() {
-            let lanes = [laneLeft, laneRight, 180];
+            let lanes = [100, 180, 260];
             let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
             obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
         }
 
         function moveObstacles() {
             obstacles.forEach(obstacle => {
-                obstacle.y += obstacleSpeed;
+                obstacle.y += 3;
             });
-            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height); // Remove off-screen obstacles
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
         }
 
         function drawObstacles() {
@@ -91,7 +90,7 @@
                     driver.y < obstacle.y + obstacle.height &&
                     driver.y + driver.height > obstacle.y) {
                     gameRunning = false;
-                    messageBox.innerText = "Crash! Game Over.";
+                    messageBox.innerText = "Crash! Tap to Restart.";
                     leftBtn.disabled = true;
                     rightBtn.disabled = true;
                 }
@@ -106,9 +105,9 @@
             rightBtn.disabled = true;
 
             setTimeout(() => {
-                if (Math.random() > 0.3) { // 70% chance the driver listens
-                    if (direction === "left" && driver.x > laneLeft) driver.x -= 40;
-                    if (direction === "right" && driver.x < laneRight) driver.x += 40;
+                if (Math.random() > 0.3) {
+                    if (direction === "left" && driver.x > 100) driver.x -= 40;
+                    if (direction === "right" && driver.x < 260) driver.x += 40;
                     messageBox.innerText = "";
                 } else {
                     messageBox.innerText = "Driver ignored you!";
@@ -125,19 +124,24 @@
             if (!gameRunning) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            moveRoad();
             moveObstacles();
             drawRoad();
             drawObstacles();
             drawDriver();
             checkCollision();
 
+            score++;
+            scoreBox.innerText = "Score: " + score;
+
             requestAnimationFrame(update);
         }
 
-        setInterval(spawnObstacle, 2000); // Spawn a new obstacle every 2 seconds
+        canvas.addEventListener("click", () => {
+            if (!gameRunning) resetGame();
+        });
 
-        update();
+        setInterval(spawnObstacle, 2000);
+        resetGame();
     </script>
 </body>
 </html>
