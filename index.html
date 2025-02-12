@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backseat Driver</title>
+    <title>Back Seat Driver</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; background: #f4f4f4; }
-        canvas { background: #aaa; margin-top: 20px; display: block; margin-left: auto; margin-right: auto; border: 2px solid black; }
-        .controls { margin-top: 10px; }
+        canvas { background: #aaa; margin-top: 20px; display: none; margin-left: auto; margin-right: auto; border: 2px solid black; }
+        .controls, .score, .message { display: none; }
         button { font-size: 18px; padding: 10px 20px; margin: 5px; }
-        .message { font-size: 20px; font-weight: bold; color: red; margin-top: 10px; height: 30px; }
-        .score { font-size: 24px; font-weight: bold; color: black; margin-top: 10px; }
+        .welcome-screen { display: block; margin-top: 50px; }
+        .welcome-title { font-size: 32px; font-weight: bold; }
+        .welcome-tagline { font-size: 18px; color: gray; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <h1>Backseat Driver</h1>
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-title">Back Seat Driver</div>
+        <div class="welcome-tagline">Ugh, such an annoying game.</div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
     <div class="score" id="score">Score: 0</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
@@ -30,8 +36,19 @@
         const scoreBox = document.getElementById("score");
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const controls = document.querySelector(".controls");
 
         let driver, obstacles, gameRunning, score, buttonCooldown;
+
+        function startGame() {
+            welcomeScreen.style.display = "none";
+            canvas.style.display = "block";
+            scoreBox.style.display = "block";
+            messageBox.style.display = "block";
+            controls.style.display = "block";
+            resetGame();
+        }
 
         function resetGame() {
             driver = { x: 180, y: 500, width: 40, height: 60 };
@@ -141,7 +158,6 @@
         });
 
         setInterval(spawnObstacle, 2000);
-        resetGame();
     </script>
 </body>
 </html>
