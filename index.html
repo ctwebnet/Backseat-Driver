@@ -15,8 +15,7 @@
         }
 
         canvas {
-            canvas {
-    background: linear-gradient(45deg, rgba(0, 255, 204, 0.5), rgba(255, 204, 0, 0.5)); /* Semi-transparent */
+            background: #222; /* Dark gray to ensure visibility */
             margin-top: 20px;
             display: none;
             margin-left: auto;
@@ -92,7 +91,7 @@
         .frustration-bar {
             width: 0%;
             height: 100%;
-            background: green; /* Changes as frustration increases */
+            background: green;
             transition: width 0.3s, background 0.3s;
         }
     </style>
@@ -155,48 +154,44 @@
             update();
         }
 
-        function giveCommand(direction) {
-            if (buttonCooldown || !gameRunning) return;
+        function drawDriver() {
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
+        }
 
-            const now = Date.now();
-            const timeSinceLastCommand = (now - lastCommandTime) / 1000;
-
-            if (timeSinceLastCommand > 5) {
-                frustrationLevel = Math.max(0, frustrationLevel - 10); 
-            } else {
-                frustrationLevel += 5; 
+        function drawRoad() {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(50, 0, 300, canvas.height);
+            ctx.fillStyle = "#00ff00";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
             }
-
-            updateFrustration();
-
-            lastCommandTime = now;
-            buttonCooldown = true;
-            leftBtn.disabled = true;
-            rightBtn.disabled = true;
-
-            setTimeout(() => {
-                if (Math.random() > 0.3 + (frustrationLevel / 100)) {
-                    if (direction === "left" && driver.x > 100) driver.x -= 40;
-                    if (direction === "right" && driver.x < 260) driver.x += 40;
-                    messageBox.innerText = "";
-                } else {
-                    messageBox.innerText = "Driver ignored you!";
-                    setTimeout(() => { messageBox.innerText = ""; }, 1000);
-                }
-
-                buttonCooldown = false;
-                leftBtn.disabled = false;
-                rightBtn.disabled = false;
-            }, frustrationLevel * 10);
         }
 
-        function updateFrustration() {
-            frustrationBar.style.width = frustrationLevel + "%";
-            frustrationBar.style.background = `rgb(${frustrationLevel * 2.5}, ${255 - frustrationLevel * 2.5}, 0)`;
+        function spawnObstacle() {
+            let lanes = [100, 180, 260];
+            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
+            let newObstacle = { x: obstacleX, y: -40, width: 40, height: 40 };
+            obstacles.push(newObstacle);
         }
 
-        setInterval(spawnObstacle, 2000);
-        update();
-    </script>
-</body>
-</html>
+        function drawObstacles() {
+            ctx.fillStyle = "#00ff00";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += 3;
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (driver.x < obstacle
