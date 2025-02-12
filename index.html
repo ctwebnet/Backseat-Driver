@@ -15,7 +15,7 @@
         }
 
         canvas {
-            background: #222; /* Dark gray to ensure visibility */
+            background: #222; /* Dark gray to ensure visibility of objects */
             margin-top: 20px;
             display: none;
             margin-left: auto;
@@ -24,7 +24,7 @@
             box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
         }
 
-        .controls, .score, .message, .frustration-container {
+        .controls, .score, .message {
             display: none;
         }
 
@@ -77,23 +77,6 @@
             color: #ff0000;
             margin-top: 10px;
         }
-
-        /* Frustration Meter Styles */
-        .frustration-container {
-            width: 300px;
-            height: 20px;
-            background: #555;
-            border: 2px solid #000;
-            margin: 10px auto;
-            position: relative;
-        }
-
-        .frustration-bar {
-            width: 0%;
-            height: 100%;
-            background: green;
-            transition: width 0.3s, background 0.3s;
-        }
     </style>
 </head>
 <body>
@@ -104,9 +87,6 @@
     </div>
 
     <div class="score" id="score">Score: 0</div>
-    <div class="frustration-container" id="frustrationContainer">
-        <div class="frustration-bar" id="frustrationBar"></div>
-    </div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
@@ -123,10 +103,8 @@
         const rightBtn = document.getElementById("rightBtn");
         const welcomeScreen = document.getElementById("welcomeScreen");
         const controls = document.querySelector(".controls");
-        const frustrationBar = document.getElementById("frustrationBar");
-        const frustrationContainer = document.getElementById("frustrationContainer");
 
-        let driver, obstacles, gameRunning, score, buttonCooldown, frustrationLevel, lastCommandTime;
+        let driver, obstacles, gameRunning, score, buttonCooldown;
 
         function startGame() {
             welcomeScreen.style.display = "none";
@@ -134,7 +112,6 @@
             scoreBox.style.display = "block";
             messageBox.style.display = "block";
             controls.style.display = "block";
-            frustrationContainer.style.display = "block";
             resetGame();
         }
 
@@ -144,13 +121,10 @@
             gameRunning = true;
             score = 0;
             buttonCooldown = false;
-            frustrationLevel = 0;
-            lastCommandTime = Date.now();
             leftBtn.disabled = false;
             rightBtn.disabled = false;
             messageBox.innerText = "";
             scoreBox.innerText = "Score: 0";
-            updateFrustration();
             update();
         }
 
@@ -194,4 +168,54 @@
 
         function checkCollision() {
             obstacles.forEach(obstacle => {
-                if (driver.x < obstacle
+                if (driver.x < obstacle.x + obstacle.width &&
+                    driver.x + driver.width > obstacle.x &&
+                    driver.y < obstacle.y + obstacle.height &&
+                    driver.y + driver.height > obstacle.y) {
+                    gameRunning = false;
+                    messageBox.innerText = "Crash! Tap to Restart.";
+                    leftBtn.disabled = true;
+                    rightBtn.disabled = true;
+                }
+            });
+        }
+
+        function giveCommand(direction) {
+            if (buttonCooldown || !gameRunning) return;
+
+            buttonCooldown = true;
+            leftBtn.disabled = true;
+            rightBtn.disabled = true;
+
+            setTimeout(() => {
+                if (Math.random() > 0.3) {
+                    if (direction === "left" && driver.x > 100) driver.x -= 40;
+                    if (direction === "right" && driver.x < 260) driver.x += 40;
+                    messageBox.innerText = "";
+                } else {
+                    messageBox.innerText = "Driver ignored you!";
+                    setTimeout(() => { messageBox.innerText = ""; }, 1000);
+                }
+
+                buttonCooldown = false;
+                leftBtn.disabled = false;
+                rightBtn.disabled = false;
+            }, 1000);
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoad();
+            drawObstacles();
+            drawDriver();
+            moveObstacles();
+            checkCollision();
+            requestAnimationFrame(update);
+        }
+
+        setInterval(spawnObstacle, 2000);
+    </script>
+</body>
+</html>
+
