@@ -17,20 +17,23 @@
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
-        <button onclick="giveCommand('left')">Turn Left</button>
-        <button onclick="giveCommand('right')">Turn Right</button>
+        <button id="leftBtn" onclick="giveCommand('left')">Turn Left</button>
+        <button id="rightBtn" onclick="giveCommand('right')">Turn Right</button>
     </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const messageBox = document.getElementById("message");
+        const leftBtn = document.getElementById("leftBtn");
+        const rightBtn = document.getElementById("rightBtn");
 
         let driver = { x: 180, y: 500, width: 40, height: 60 };
         let laneLeft = 100;
         let laneRight = 260;
         let roadSpeed = 5;
         let laneMarkings = Array.from({ length: 6 }, (_, i) => ({ x: 195, y: i * 100 }));
+        let buttonCooldown = false; // Prevents spam clicking
 
         function drawRoad() {
             ctx.fillStyle = "#444";
@@ -59,14 +62,26 @@
         }
 
         function giveCommand(direction) {
-            if (Math.random() > 0.3) { // 70% chance the driver listens
-                if (direction === "left" && driver.x > laneLeft) driver.x -= 40;
-                if (direction === "right" && driver.x < laneRight) driver.x += 40;
-                messageBox.innerText = "";
-            } else {
-                messageBox.innerText = "Driver ignored you!";
-                setTimeout(() => { messageBox.innerText = ""; }, 1000);
-            }
+            if (buttonCooldown) return; // Prevent multiple presses before delay finishes
+
+            buttonCooldown = true;
+            leftBtn.disabled = true;
+            rightBtn.disabled = true;
+
+            setTimeout(() => {
+                if (Math.random() > 0.3) { // 70% chance the driver listens
+                    if (direction === "left" && driver.x > laneLeft) driver.x -= 40;
+                    if (direction === "right" && driver.x < laneRight) driver.x += 40;
+                    messageBox.innerText = "";
+                } else {
+                    messageBox.innerText = "Driver ignored you!";
+                    setTimeout(() => { messageBox.innerText = ""; }, 1000);
+                }
+
+                buttonCooldown = false;
+                leftBtn.disabled = false;
+                rightBtn.disabled = false;
+            }, 1000); // 1-second delay before the action happens
         }
 
         function update() {
@@ -77,7 +92,8 @@
             requestAnimationFrame(update);
         }
 
-        update();
+        update(); // Start the game loop immediately
+
     </script>
 </body>
 </html>
