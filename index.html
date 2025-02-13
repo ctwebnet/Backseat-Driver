@@ -1,84 +1,217 @@
-<script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const messageBox = document.getElementById("message");
-    const scoreBox = document.getElementById("score");
-    const frustrationBox = document.getElementById("frustration");
-    const leftBtn = document.getElementById("leftBtn");
-    const rightBtn = document.getElementById("rightBtn");
-    const welcomeScreen = document.getElementById("welcomeScreen");
-    const controls = document.querySelector(".controls");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back Seat Driver</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-    let driver, obstacles, gameRunning, score = 0, buttonCooldown;
-    let frustrationLevel = 0;
+        body {
+            text-align: center;
+            font-family: 'Press Start 2P', cursive;
+            background: #ff00ff; /* 90s hot pink */
+            color: #fff;
+        }
 
-    function startGame() {
-        welcomeScreen.style.display = "none";
-        canvas.style.display = "block";
-        scoreBox.style.display = "block";
-        messageBox.style.display = "block";
-        controls.style.display = "block";
-        frustrationBox.style.display = "block";
-        resetGame();
-    }
+        canvas {
+            background: linear-gradient(45deg, #00ffcc, #ffcc00);
+            margin-top: 20px;
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+            border: 5px solid #000;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        }
 
-    function resetGame() {
-        driver = { x: 180, y: 500, width: 40, height: 60 };
-        obstacles = [];
-        gameRunning = true;  // ✅ Ensure game restarts properly
-        score = 0;
-        frustrationLevel = 0;
-        buttonCooldown = false;
-        leftBtn.disabled = false;
-        rightBtn.disabled = false;
-        messageBox.innerText = "";
-        scoreBox.innerText = "Score: 0";
-        frustrationBox.innerText = "Frustration Level: " + frustrationLevel;
+        .controls, .score, .message, .frustration {
+            display: none;
+        }
 
-        console.log("Game restarted");  // Debugging message
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background: #ffcc00;
+            color: #000;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 3px 3px 0 #000;
+        }
 
-        // ✅ Make sure game loop restarts
-        requestAnimationFrame(update);
-    }
+        button:hover {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: none;
+        }
 
-    function checkCollision() {
-        obstacles.forEach(obstacle => {
-            if (driver.x < obstacle.x + obstacle.width &&
-                driver.x + driver.width > obstacle.x &&
-                driver.y < obstacle.y + obstacle.height &&
-                driver.y + driver.height > obstacle.y) {
-                gameRunning = false;
-                messageBox.innerText = "Crash! Tap to Restart.";
-                leftBtn.disabled = true;
-                rightBtn.disabled = true;
-                console.log("Crash detected");  // Debugging message
-            }
-        });
-    }
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-top: 10px;
+        }
 
-    // ✅ Fix: Restart game when tapping on the canvas after crash
-    canvas.addEventListener("click", () => {
-        if (!gameRunning) {
-            console.log("Canvas clicked, restarting game");  // Debugging message
+        .frustration {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ff0000;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-title">Back Seat Driver</div>
+        <div class="welcome-tagline">Ugh, such an annoying game.</div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="score" id="score">Score: 0</div>
+    <div class="frustration" id="frustration">Frustration Level: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="message" id="message"></div>
+    <div class="controls">
+        <button id="leftBtn" onclick="giveCommand('left')">Turn Left</button>
+        <button id="rightBtn" onclick="giveCommand('right')">Turn Right</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const messageBox = document.getElementById("message");
+        const scoreBox = document.getElementById("score");
+        const frustrationBox = document.getElementById("frustration");
+        const leftBtn = document.getElementById("leftBtn");
+        const rightBtn = document.getElementById("rightBtn");
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const controls = document.querySelector(".controls");
+
+        let driver, obstacles, gameRunning, score = 0, buttonCooldown;
+        let frustrationLevel = 0; // New frustration variable
+
+        function startGame() {
+            welcomeScreen.style.display = "none";
+            canvas.style.display = "block";
+            scoreBox.style.display = "block";
+            messageBox.style.display = "block";
+            controls.style.display = "block";
+            frustrationBox.style.display = "block"; // Show frustration meter
             resetGame();
         }
-    });
 
-    function update() {
-        if (!gameRunning) return;  // ✅ Prevent update if game is over
+        function resetGame() {
+            driver = { x: 180, y: 500, width: 40, height: 60 };
+            obstacles = [];
+            gameRunning = true;
+            score = 0;
+            frustrationLevel = 0; // Reset frustration level
+            buttonCooldown = false;
+            leftBtn.disabled = false;
+            rightBtn.disabled = false;
+            messageBox.innerText = "";
+            scoreBox.innerText = "Score: 0";
+            frustrationBox.innerText = "Frustration Level: " + frustrationLevel; // Display frustration level
+            update();
+        }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function giveCommand(direction) {
+            if (buttonCooldown || !gameRunning) return;
 
-        moveObstacles();
-        drawRoad();
-        drawObstacles();
-        drawDriver();
-        checkCollision();
+            // Increase frustration level every time a command is given
+            frustrationLevel = Math.min(100, frustrationLevel + 5);
+            frustrationBox.innerText = "Frustration Level: " + frustrationLevel;
 
-        if (gameRunning) {
+            buttonCooldown = true;
+            leftBtn.disabled = true;
+            rightBtn.disabled = true;
+
+            setTimeout(() => {
+                if (Math.random() > 0.3) {
+                    if (direction === "left" && driver.x > 100) driver.x -= 40;
+                    if (direction === "right" && driver.x < 260) driver.x += 40;
+                    messageBox.innerText = "";
+                } else {
+                    messageBox.innerText = "Driver ignored you!";
+                    setTimeout(() => { messageBox.innerText = ""; }, 1000);
+                }
+
+                buttonCooldown = false;
+                leftBtn.disabled = false;
+                rightBtn.disabled = false;
+            }, 1000);
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            moveObstacles();
+            drawRoad();
+            drawObstacles();
+            drawDriver();
+            checkCollision();
+
             score++;
             scoreBox.innerText = "Score: " + score;
-            requestAnimationFrame(update);  // ✅ Ensure continuous updates
+
+            requestAnimationFrame(update);
         }
-    }
-</script>
+
+        function drawRoad() {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(50, 0, 300, canvas.height);
+            ctx.fillStyle = "#00ff00";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
+            }
+        }
+
+        function drawDriver() {
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
+        }
+
+        function spawnObstacle() {
+            let lanes = [100, 180, 260];
+            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
+            obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
+        }
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += 3;
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "#ffcc00";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (driver.x < obstacle.x + obstacle.width &&
+                    driver.x + driver.width > obstacle.x &&
+                    driver.y < obstacle.y + obstacle.height &&
+                    driver.y + driver.height > obstacle.y) {
+                    gameRunning = false;
+                    messageBox.innerText = "Crash! Tap to Restart.";
+                    leftBtn.disabled = true;
+                    rightBtn.disabled = true;
+                }
+            });
+        }
+
+        setInterval(spawnObstacle, 2000);
+    </script>
+</body>
+</html>
