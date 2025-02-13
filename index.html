@@ -15,7 +15,7 @@
         }
 
         canvas {
-            background: linear-gradient(45deg, #00ffcc, #ffcc00); /* Neon gradient */
+            background: linear-gradient(45deg, #00ffcc, #ffcc00);
             margin-top: 20px;
             display: none;
             margin-left: auto;
@@ -24,7 +24,7 @@
             box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
         }
 
-        .controls, .score, .message {
+        .controls, .score, .message, .frustration {
             display: none;
         }
 
@@ -47,23 +47,6 @@
             box-shadow: none;
         }
 
-        .welcome-screen {
-            display: block;
-            margin-top: 50px;
-        }
-
-        .welcome-title {
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 2px 2px 0px #000;
-        }
-
-        .welcome-tagline {
-            font-size: 16px;
-            color: #ffff00;
-            margin-bottom: 20px;
-        }
-
         .score {
             font-size: 20px;
             font-weight: bold;
@@ -71,8 +54,8 @@
             margin-top: 10px;
         }
 
-        .message {
-            font-size: 18px;
+        .frustration {
+            font-size: 16px;
             font-weight: bold;
             color: #ff0000;
             margin-top: 10px;
@@ -87,6 +70,7 @@
     </div>
 
     <div class="score" id="score">Score: 0</div>
+    <div class="frustration" id="frustration">Frustration Level: 0</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="message" id="message"></div>
     <div class="controls">
@@ -99,12 +83,14 @@
         const ctx = canvas.getContext("2d");
         const messageBox = document.getElementById("message");
         const scoreBox = document.getElementById("score");
+        const frustrationBox = document.getElementById("frustration");
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
         const welcomeScreen = document.getElementById("welcomeScreen");
         const controls = document.querySelector(".controls");
 
         let driver, obstacles, gameRunning, score = 0, buttonCooldown;
+        let frustrationLevel = 0; // New frustration variable
 
         function startGame() {
             welcomeScreen.style.display = "none";
@@ -112,75 +98,31 @@
             scoreBox.style.display = "block";
             messageBox.style.display = "block";
             controls.style.display = "block";
+            frustrationBox.style.display = "block"; // Show frustration meter
             resetGame();
         }
 
         function resetGame() {
-    driver = { x: 180, y: 500, width: 40, height: 60 };
-    obstacles = [];
-    gameRunning = true;
-    score = 0; // Score reset was missing in the previous version
-    buttonCooldown = false;
-    leftBtn.disabled = false;
-    rightBtn.disabled = false;
-    messageBox.innerText = "";
-    scoreBox.innerText = "Score: 0";
-    update();
-}
-
-        function drawRoad() {
-            ctx.fillStyle = "#222";
-            ctx.fillRect(50, 0, 300, canvas.height);
-            ctx.fillStyle = "#00ff00"; /* Bright neon green lane markings */
-            for (let i = 0; i < 6; i++) {
-                ctx.fillRect(195, i * 100, 10, 40);
-            }
-        }
-
-        function drawDriver() {
-            ctx.fillStyle = "#ff0000"; /* Bright red car */
-            ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
-        }
-
-        function spawnObstacle() {
-            let lanes = [100, 180, 260];
-            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
-            obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
-        }
-
-        function moveObstacles() {
-            obstacles.forEach(obstacle => {
-                obstacle.y += 3;
-            });
-            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
-        }
-
-        function drawObstacles() {
-            ctx.fillStyle = "#ffcc00"; /* Bright yellow obstacles */
-            obstacles.forEach(obstacle => {
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-        }
-
-        function checkCollision() {
-            obstacles.forEach(obstacle => {
-                if (driver.x < obstacle.x + obstacle.width &&
-                    driver.x + driver.width > obstacle.x &&
-                    driver.y < obstacle.y + obstacle.height &&
-                    driver.y + driver.height > obstacle.y) {
-                    gameRunning = false;
-                    messageBox.innerText = "Crash! Tap to Restart.";
-                    leftBtn.disabled = true;
-                    rightBtn.disabled = true;
-                }
-            });
+            driver = { x: 180, y: 500, width: 40, height: 60 };
+            obstacles = [];
+            gameRunning = true;
+            score = 0;
+            frustrationLevel = 0; // Reset frustration level
+            buttonCooldown = false;
+            leftBtn.disabled = false;
+            rightBtn.disabled = false;
+            messageBox.innerText = "";
+            scoreBox.innerText = "Score: 0";
+            frustrationBox.innerText = "Frustration Level: " + frustrationLevel; // Display frustration level
+            update();
         }
 
         function giveCommand(direction) {
             if (buttonCooldown || !gameRunning) return;
+
+            // Increase frustration level every time a command is given
+            frustrationLevel = Math.min(100, frustrationLevel + 5);
+            frustrationBox.innerText = "Frustration Level: " + frustrationLevel;
 
             buttonCooldown = true;
             leftBtn.disabled = true;
@@ -203,29 +145,74 @@
         }
 
         function update() {
-    if (!gameRunning) return;
+            if (!gameRunning) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    moveObstacles();
-    drawRoad();
-    drawObstacles();
-    drawDriver();
-    checkCollision();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            moveObstacles();
+            drawRoad();
+            drawObstacles();
+            drawDriver();
+            checkCollision();
 
-    // Ensure score increments continuously
-    if (gameRunning) {
-        score++;
-        scoreBox.innerText = "Score: " + score;
-    }
+            score++;
+            scoreBox.innerText = "Score: " + score;
 
-    requestAnimationFrame(update);
-}
+            requestAnimationFrame(update);
+        }
 
-        canvas.addEventListener("click", () => {
-            if (!gameRunning) resetGame();
-        });
+        function drawRoad() {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(50, 0, 300, canvas.height);
+            ctx.fillStyle = "#00ff00";
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
+            }
+        }
+
+        function drawDriver() {
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
+        }
+
+        function spawnObstacle() {
+            let lanes = [100, 180, 260];
+            let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
+            obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
+        }
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.y += 3;
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "#ffcc00";
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                if (driver.x < obstacle.x + obstacle.width &&
+                    driver.x + driver.width > obstacle.x &&
+                    driver.y < obstacle.y + obstacle.height &&
+                    driver.y + driver.height > obstacle.y) {
+                    gameRunning = false;
+                    messageBox.innerText = "Crash! Tap to Restart.";
+                    leftBtn.disabled = true;
+                    rightBtn.disabled = true;
+                }
+            });
+        }
 
         setInterval(spawnObstacle, 2000);
     </script>
 </body>
 </html>
+
