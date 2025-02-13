@@ -15,7 +15,7 @@
         }
 
         canvas {
-            background: #222; /* Dark gray to ensure visibility of objects */
+            background: linear-gradient(45deg, #00ffcc, #ffcc00); /* Neon gradient */
             margin-top: 20px;
             display: none;
             margin-left: auto;
@@ -128,35 +128,27 @@
             update();
         }
 
+        function drawRoad() {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(50, 0, 300, canvas.height);
+            ctx.fillStyle = "#00ff00"; /* Bright neon green lane markings */
+            for (let i = 0; i < 6; i++) {
+                ctx.fillRect(195, i * 100, 10, 40);
+            }
+        }
+
         function drawDriver() {
-            ctx.fillStyle = "#ff0000";
+            ctx.fillStyle = "#ff0000"; /* Bright red car */
             ctx.fillRect(driver.x, driver.y, driver.width, driver.height);
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 2;
             ctx.strokeRect(driver.x, driver.y, driver.width, driver.height);
         }
 
-        function drawRoad() {
-            ctx.fillStyle = "#222";
-            ctx.fillRect(50, 0, 300, canvas.height);
-            ctx.fillStyle = "#00ff00";
-            for (let i = 0; i < 6; i++) {
-                ctx.fillRect(195, i * 100, 10, 40);
-            }
-        }
-
         function spawnObstacle() {
             let lanes = [100, 180, 260];
             let obstacleX = lanes[Math.floor(Math.random() * lanes.length)];
-            let newObstacle = { x: obstacleX, y: -40, width: 40, height: 40 };
-            obstacles.push(newObstacle);
-        }
-
-        function drawObstacles() {
-            ctx.fillStyle = "#00ff00";
-            obstacles.forEach(obstacle => {
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
+            obstacles.push({ x: obstacleX, y: -40, width: 40, height: 40 });
         }
 
         function moveObstacles() {
@@ -164,6 +156,13 @@
                 obstacle.y += 3;
             });
             obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "#ffcc00"; /* Bright yellow obstacles */
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
         }
 
         function checkCollision() {
@@ -205,14 +204,23 @@
 
         function update() {
             if (!gameRunning) return;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            moveObstacles();
             drawRoad();
             drawObstacles();
             drawDriver();
-            moveObstacles();
             checkCollision();
+
+            score++;
+            scoreBox.innerText = "Score: " + score;
+
             requestAnimationFrame(update);
         }
+
+        canvas.addEventListener("click", () => {
+            if (!gameRunning) resetGame();
+        });
 
         setInterval(spawnObstacle, 2000);
     </script>
