@@ -77,8 +77,7 @@
         <button id="leftBtn" onclick="giveCommand('left')">Turn Left</button>
         <button id="rightBtn" onclick="giveCommand('right')">Turn Right</button>
     </div>
-
-    <script>
+<script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const messageBox = document.getElementById("message");
@@ -105,7 +104,7 @@
     function resetGame() {
         driver = { x: 180, y: 500, width: 40, height: 60 };
         obstacles = [];
-        gameRunning = true;
+        gameRunning = true;  // ✅ Make sure the game is running
         score = 0;
         frustrationLevel = 0;
         buttonCooldown = false;
@@ -114,7 +113,9 @@
         messageBox.innerText = "";
         scoreBox.innerText = "Score: 0";
         frustrationBox.innerText = "Frustration Level: " + frustrationLevel;
-        update();
+
+        // ✅ Ensure the game loop starts
+        requestAnimationFrame(update);
     }
 
     function checkCollision() {
@@ -139,9 +140,11 @@
     });
 
     function update() {
-        if (!gameRunning) return;
+        if (!gameRunning) return;  // ✅ Prevent update if game is over
 
+        // ✅ Clear the screen properly before redrawing
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         moveObstacles();
         drawRoad();
         drawObstacles();
@@ -151,9 +154,8 @@
         if (gameRunning) {
             score++;
             scoreBox.innerText = "Score: " + score;
+            requestAnimationFrame(update);  // ✅ Ensure continuous updates
         }
-
-        requestAnimationFrame(update);
     }
 </script>
 </body>
